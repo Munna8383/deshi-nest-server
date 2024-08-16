@@ -1,6 +1,7 @@
 const express = require("express")
 const cors = require("cors")
 const app= express()
+require("dotenv").config()
 const port = process.env.PORT || 5000
 
 app.use(cors())
@@ -43,7 +44,11 @@ async function run() {
         const size =parseInt(req.query.size)
         const search = req.query.search
         const  brand = req.query.brand 
-        const  category = req.query.category 
+        const  category = req.query.category
+        
+        const range =req.query.part
+     
+
 
 
         const query = 
@@ -51,10 +56,15 @@ async function run() {
               productName:{$regex:search, $options:"i"}
             }
 
+
+            const sortOption = {
+              price: range === "High-To-Low" ? -1 : 1
+            };
+
       
         if(brand){
 
-          query.$or = [
+          query.$and = [
             { 
               brand : brand
             }
@@ -63,19 +73,15 @@ async function run() {
       
         if(category){
 
-          query.$or = [
+          query.$and = [
             { 
               category : category
             }
         ];
-        }
+        }     
 
 
-
-       
-
-
-        const result = await productCollection.find(query).skip(page*size).limit(size).toArray()
+        const result = await productCollection.find(query).sort(sortOption).skip(page*size).limit(size).toArray()
 
         res.send(result)
 
