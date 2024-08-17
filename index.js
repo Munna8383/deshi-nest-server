@@ -4,7 +4,10 @@ const app= express()
 require("dotenv").config()
 const port = process.env.PORT || 5000
 
-app.use(cors())
+app.use(cors({
+  origin:["https://deshi-nest.web.app"],
+  credentials:true
+}))
 app.use(express.json())
 
 
@@ -37,56 +40,111 @@ async function run() {
 
 
 
-    app.get("/products",async(req,res)=>{
+    app.get("/products", async (req, res) => {
 
 
-        const page =parseInt(req.query.page)
-        const size =parseInt(req.query.size)
-        const search = req.query.search
-        const  brand = req.query.brand 
-        const  category = req.query.category
-        
-        const range =req.query.part
-     
+      const page = parseInt(req.query.page)
+      const size = parseInt(req.query.size)
+      const search = req.query.search
+      const brand = req.query.brand
+      const category = req.query.category
+
+      const range = req.query.part
+      const priceLimit = req.query.priceLimit
+      const date = req.query.date
+
+
+      console.log(date)
+
+      const [min, max] = priceLimit.split('-').map(Number);
+
+
+      const sortOption = {};
+
+      // Sort by price
+      if (range) {
+          sortOption.price = range === "High-To-Low" ? -1 : 1;
+      }
+  
+      // Sort by product creation date if specified
+      if (date) {
+          sortOption.productCreationDate = date === "Oldest-Product" ? 1 : -1;
+      }
+
+
+    
+
+
+      // const sortOption = {
+      //   price: range === "High-To-Low" ? -1 : 1,
+      //   productCreationDate:date==="Oldest-Product"?1 :-1
+      // };
+
+
+      const query =
+      {
+        productName: { $regex: search, $options: "i" }
+      }
 
 
 
-        const query = 
-            {
-              productName:{$regex:search, $options:"i"}
-            }
+      if (brand) {
 
-
-            const sortOption = {
-              price: range === "High-To-Low" ? -1 : 1
-            };
-
-      
-        if(brand){
-
-          query.$and = [
-            { 
-              brand : brand
-            }
+        query.$or = [
+          {
+            brand: brand
+          }
         ];
-        }
-      
-        if(category){
+      }
 
-          query.$and = [
-            { 
-              category : category
-            }
+      if (category) {
+
+        query.$or = [
+          {
+            category: category
+          }
         ];
-        }     
+      }
 
 
-        const result = await productCollection.find(query).sort(sortOption).skip(page*size).limit(size).toArray()
 
-        res.send(result)
+
+      if (min && max) {
+
+        query.$or = [
+          {
+            price: { $gt: min, $lt: max }
+          }
+        ]
+
+      }
+
+
+
+
+
+
+      const result = await productCollection.find(query).sort(sortOption).skip(page * size).limit(size).toArray()
+
+
+
+      res.send(result)
 
 
     })
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     app.get("/productCount",async(req,res)=>{
@@ -106,9 +164,9 @@ async function run() {
 
 
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
