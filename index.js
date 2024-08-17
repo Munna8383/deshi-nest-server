@@ -5,7 +5,7 @@ require("dotenv").config()
 const port = process.env.PORT || 5000
 
 app.use(cors({
-  origin:["https://deshi-nest.web.app"],
+  origin:["https://deshi-nest.web.app","https://deshi-nest.firebaseapp.com"],
   credentials:true
 }))
 app.use(express.json())
@@ -45,7 +45,7 @@ async function run() {
 
       const page = parseInt(req.query.page)
       const size = parseInt(req.query.size)
-      const search = req.query.search
+      const search = req.query.search || ""
       const brand = req.query.brand
       const category = req.query.category
 
@@ -53,10 +53,13 @@ async function run() {
       const priceLimit = req.query.priceLimit
       const date = req.query.date
 
-
-      console.log(date)
-
-      const [min, max] = priceLimit.split('-').map(Number);
+      let min, max;
+      if (priceLimit) {
+        [min, max] = priceLimit.split('-').map(Number);
+      } else {
+        // Handle the case where priceLimit is undefined or empty
+        min = max = null; // or some default values
+      }
 
 
       const sortOption = {};
